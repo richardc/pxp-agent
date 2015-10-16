@@ -41,7 +41,13 @@ endif()
 # Set RPATH if not installing to a system library directory
 list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" INSTALL_IS_SYSTEM_DIR)
 if ("${INSTALL_IS_SYSTEM_DIR}" STREQUAL "-1")
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    if (EXTERNAL_CPP_PCP_CLIENT)
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    else()
+        # MACOSX_RPATH is on by default in 3.0 - CMP0042
+        # disable for now
+        cmake_policy(SET CMP0042 OLD)
+    endif()
 endif()
 
 # Leatherman it up
