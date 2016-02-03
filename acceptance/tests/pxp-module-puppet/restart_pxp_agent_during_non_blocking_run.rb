@@ -22,8 +22,12 @@ SITEPP
     module_manifest = "#{environmentpath}/#{ENVIRONMENT_NAME}/modules/#{MODULE_NAME}/manifests/init.pp"
     create_remote_file(master, module_manifest, <<-MODULEPP)
 class #{MODULE_NAME} {
-  exec { 'sleep':
-   command => '/bin/sleep #{SECONDS_TO_SLEEP} || true', # or true to ignore the exit code of sleep
+  case $::osfamily {
+    'windows': { exec { 'sleep':
+                        command => 'true',
+                        unless  => 'sleep #{SECONDS_TO_SLEEP}', #PUP-5806
+                        path    => 'C:\\cygwin64\\bin',} }
+    default:   { exec { 'sleep': command => '/bin/sleep #{SECONDS_TO_SLEEP} || /bin/true', } }
   }
 }
 MODULEPP
@@ -44,7 +48,7 @@ MODULEPP
     end
 
     step 'Wait a couple of seconds to ensure that Puppet has time to execute manifest' do
-      sleep 2
+      sleep 15
     end
 
     step "Restart pxp-agent service on #{agent}" do
@@ -53,7 +57,7 @@ MODULEPP
     end
 
     step 'Signal sleep to end so Puppet run will complete' do
-      on(agent, "ps -ef | grep '/bin/sleep' | grep -v 'grep' | grep -v 'true' | sed 's/^[^0-9]*//g' | cut -d\\  -f1") do |output|
+      on(agent, "ps -ef | grep 'bin/sleep' | grep -v 'grep' | grep -v 'true' | sed 's/^[^0-9]*//g' | cut -d\\  -f1") do |output|
         pid = output.stdout.chomp
         if (!pid || pid == '')
           fail('Did not find a pid for the sleep process holding up Puppet - cannot test PXP response if Puppet wasn\'t sleeping')
