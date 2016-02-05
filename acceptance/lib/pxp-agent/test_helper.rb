@@ -231,7 +231,7 @@ def rpc_blocking_request(broker, targets,
   message = PCP::Message.new({
     :message_type => 'http://puppetlabs.com/rpc_blocking_request',
     :targets => targets
-  })
+  }).expires(60)
 
   message.data = {
     :transaction_id => SecureRandom.uuid,
@@ -351,7 +351,7 @@ def rpc_non_blocking_request(broker, targets,
   message = PCP::Message.new({
     :message_type => 'http://puppetlabs.com/rpc_non_blocking_request',
     :targets => targets
-  })
+  }).expires(60)
 
   message.data = {
     :transaction_id => SecureRandom.uuid,
