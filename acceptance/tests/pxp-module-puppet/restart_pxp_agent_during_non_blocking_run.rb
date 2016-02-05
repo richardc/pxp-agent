@@ -44,11 +44,18 @@ MODULEPP
                                                               '--onetime',
                                                               '--no-daemonize',
                                                               "--environment", "'#{ENVIRONMENT_NAME}'"]})
+      assert_equal(provisional_responses[agent_identity][:envelope][:message_type],
+                   "http://puppetlabs.com/rpc_provisional_response",
+                   "Did not receive expected rpc_provisional_response in reply to non-blocking request")
       transaction_id = provisional_responses[agent_identity][:data]["transaction_id"]
     end
 
     step 'Wait a couple of seconds to ensure that Puppet has time to execute manifest' do
-      sleep 15
+      begin
+        retry_on(agent, "ps -ef | grep 'bin/sleep' | grep -v 'grep'", {:max_retries => 15, :retry_interval => 2})
+      rescue
+        fail("After triggering a puppet run on #{agent} the expected sleep process did not appear in process list")
+      end
     end
 
     step "Restart pxp-agent service on #{agent}" do
