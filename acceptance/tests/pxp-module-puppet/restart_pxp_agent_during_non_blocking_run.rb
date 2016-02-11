@@ -82,8 +82,8 @@ MODULEPP
         query_responses = rpc_blocking_request(master, [agent_identity],
                                         'status', 'query', {:transaction_id => transaction_id})
         action_result = query_responses[agent_identity][:data]["results"]
-        if (action_result.has_key?('stdout'))
-          puppet_run_result = JSON.parse(action_result['stdout'])['status']
+        if (action_result.has_key?('stdout') && (action_result['stdout'] != ""))
+          puppet_run_result = JSON.parse(action_result['stdout'])['report']['status']
         end
         query_attempts += 1
         if (!puppet_run_result)
