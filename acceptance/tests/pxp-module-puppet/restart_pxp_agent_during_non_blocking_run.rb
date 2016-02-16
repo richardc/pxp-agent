@@ -34,6 +34,17 @@ MODULEPP
     on(master, "chmod 644 #{module_manifest}")
   end
 
+  step 'Ensure each agent host has pxp-agent running and associated' do
+    agents.each_with_index do |agent, i|
+      on agent, puppet('resource service pxp-agent ensure=stopped')
+      cert_dir = configure_std_certs_on_host(agent)
+      create_remote_file(agent, pxp_agent_config_file(agent), pxp_config_json_using_test_certs(master, agent, i + 1, cert_dir).to_s)
+      on agent, puppet('resource service pxp-agent ensure=running')
+      assert(is_associated?(master, "pcp://client0#{i+1}.example.com/agent"),
+             "Agent #{agent} with PCP identity pcp://client0#{i+1}.example.com/agent should be associated with pcp-broker")
+    end
+  end
+
   agents.each_with_index do |agent, i|
     agent_identity = "pcp://client0#{i+1}.example.com/agent"
     transaction_id = nil
@@ -83,7 +94,7 @@ MODULEPP
                                         'status', 'query', {:transaction_id => transaction_id})
         action_result = query_responses[agent_identity][:data]["results"]
         if (action_result.has_key?('stdout') && (action_result['stdout'] != ""))
-          puppet_run_result = JSON.parse(action_result['stdout'])['report']['status']
+          puppet_run_result = JSON.parse(action_result['stdout'])['status']
         end
         query_attempts += 1
         if (!puppet_run_result)
