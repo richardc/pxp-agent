@@ -321,11 +321,7 @@ def rpc_non_blocking_request(broker, targets,
   have_response = ConditionVariable.new
   responses = Hash.new
 
-  client = PCP::Client.new({
-    :server => broker_ws_uri(broker),
-    :ssl_cert => "../test-resources/ssl/certs/controller01.example.com.pem",
-    :ssl_key => "../test-resources/ssl/private_keys/controller01.example.com.pem"
-  })
+  client = connect_pcp_client(broker)
 
   client.on_message = proc do |message|
     mutex.synchronize do
@@ -338,14 +334,6 @@ def rpc_non_blocking_request(broker, targets,
       print resp
       have_response.signal
     end
-  end
-
-  if !client.connect(10)
-    raise "Controller PCP client failed to connect with pcp-broker on #{broker}"
-  end
-
-  if !client.associated?
-    raise "Controller PCP client failed to associate with pcp-broker on #{broker}"
   end
 
   message = PCP::Message.new({
