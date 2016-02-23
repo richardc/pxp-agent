@@ -347,7 +347,7 @@ def rpc_non_blocking_request(broker, targets,
                          params)
   # Event machine is required by the ruby-pcp-client gem
   # https://github.com/puppetlabs/ruby-pcp-client
-  em = Thread.new { EM.run }
+  em_thread = start_eventmachine_thread
 
   mutex = Mutex.new
   have_response = ConditionVariable.new
@@ -404,9 +404,9 @@ def rpc_non_blocking_request(broker, targets,
         raise "Didn't receive all PCP responses when requesting puppet run on #{targets}. Responses received were: #{responses.to_s}"
       end
     end
+  ensure
+    stop_eventmachine_thread(em_thread)
   end # wait for message
-
-  em.exit
 
   responses
 end
